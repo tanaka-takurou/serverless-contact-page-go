@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"log"
 	"context"
@@ -19,7 +20,6 @@ type APIResponse struct {
 type Response events.APIGatewayProxyResponse
 
 const layout   string = "2006-01-02 15:04"
-const topicArn string = "your_topic_arn"
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (Response, error) {
 	var jsonBytes []byte
@@ -56,12 +56,12 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 func sendmessage(name string, message string, mail string) error {
 	svc := sns.New(session.New(), &aws.Config{
-		Region: aws.String("ap-northeast-1"),
+		Region: aws.String(os.Getenv("REGION")),
 	})
 
 	input := &sns.PublishInput{
 		Message:  aws.String("[Name]\n" + name + "\n\n[Mail]\n" + mail + "\n\n[Message]\n" + message),
-		TopicArn: aws.String(topicArn),
+		TopicArn: aws.String(os.Getenv("TOPIC_ARN")),
 	}
 	_, err := svc.Publish(input)
 	if err != nil {
