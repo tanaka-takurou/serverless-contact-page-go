@@ -1,34 +1,3 @@
-$(document).ready(function() {
-  var
-    $headers     = $('body > h1'),
-    $header      = $headers.first(),
-    ignoreScroll = false,
-    timer;
-
-  $(window)
-    .on('resize', function() {
-      clearTimeout(timer);
-      $headers.visibility('disable callbacks');
-
-      $(document).scrollTop( $header.offset().top );
-
-      timer = setTimeout(function() {
-        $headers.visibility('enable callbacks');
-      }, 500);
-    });
-  $headers
-    .visibility({
-      once: false,
-      checkOnRefresh: true,
-      onTopPassed: function() {
-        $header = $(this);
-      },
-      onTopPassedReverse: function() {
-        $header = $(this);
-      }
-    });
-});
-
 var SubmitForm = function() {
   $("#submit").addClass('disabled');
   var name    = $("#name").val();
@@ -72,7 +41,7 @@ var request = function(data, callback, onerror) {
     contentType:   'application/json',
     scriptCharset: 'utf-8',
     data:          JSON.stringify(data),
-    url:           {{ .Api }}
+    url:           App.url
   })
   .done(function(res) {
     callback(res);
@@ -86,3 +55,4 @@ var checkMail = function(s) {
   const regexp = /^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/;
   return regexp.test(s)
 };
+var App = { url: location.origin + {{ .ApiPath }} };
