@@ -12,7 +12,7 @@ import (
 )
 
 type PageData struct {
-	Title string
+	Title   string
 	ApiPath string
 }
 
