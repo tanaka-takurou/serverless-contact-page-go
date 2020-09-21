@@ -6,11 +6,12 @@ import (
 	"log"
 	"context"
 	"encoding/json"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
 
 type APIResponse struct {
@@ -18,6 +19,9 @@ type APIResponse struct {
 }
 
 type Response events.APIGatewayProxyResponse
+
+var cfg aws.Config
+var snsClient *sns.Client
 
 const layout   string = "2006-01-02 15:04"
 
@@ -32,7 +36,7 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 			if n, ok := d["name"]; ok {
 				if b, ok := d["message"]; ok {
 					if m, ok := d["mail"]; ok {
-						err = sendmessage(n, b, m)
+						err = sendmessage(ctx, n, b, m)
 					}
 				}
 			}
@@ -54,20 +58,28 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	}, nil
 }
 
-func sendmessage(name string, message string, mail string) error {
-	svc := sns.New(session.New(), &aws.Config{
-		Region: aws.String(os.Getenv("REGION")),
-	})
+func sendmessage(ctx context.Context, name string, message string, mail string) error {
+	if snsClient == nil {
+		snsClient = sns.New(cfg)
+	}
 
 	input := &sns.PublishInput{
 		Message:  aws.String("[Name]\n" + name + "\n\n[Mail]\n" + mail + "\n\n[Message]\n" + message),
 		TopicArn: aws.String(os.Getenv("TOPIC_ARN")),
 	}
-	_, err := svc.Publish(input)
+
+	req := snsClient.PublishRequest(input)
+	_, err := req.Send(ctx)
+	return err
+}
+
+func init() {
+	var err error
+	cfg, err = external.LoadDefaultAWSConfig()
+	cfg.Region = os.Getenv("REGION")
 	if err != nil {
-		return err
+		log.Print(err)
 	}
-	return nil
 }
 
 func main() {
