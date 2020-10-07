@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
 
@@ -20,7 +20,6 @@ type APIResponse struct {
 
 type Response events.APIGatewayProxyResponse
 
-var cfg aws.Config
 var snsClient *sns.Client
 
 const layout   string = "2006-01-02 15:04"
@@ -60,26 +59,23 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 func sendmessage(ctx context.Context, name string, message string, mail string) error {
 	if snsClient == nil {
-		snsClient = sns.New(cfg)
+		cfg, err := config.LoadDefaultConfig()
+		if err != nil {
+			log.Print(err)
+			return err
+		}
+		cfg.Region = os.Getenv("REGION")
+		snsClient = sns.NewFromConfig(cfg)
 	}
 
 	input := &sns.PublishInput{
+		Subject:  aws.String("Serverless Contact"),
 		Message:  aws.String("[Name]\n" + name + "\n\n[Mail]\n" + mail + "\n\n[Message]\n" + message),
 		TopicArn: aws.String(os.Getenv("TOPIC_ARN")),
 	}
 
-	req := snsClient.PublishRequest(input)
-	_, err := req.Send(ctx)
+	_, err := snsClient.Publish(ctx, input)
 	return err
-}
-
-func init() {
-	var err error
-	cfg, err = external.LoadDefaultAWSConfig()
-	cfg.Region = os.Getenv("REGION")
-	if err != nil {
-		log.Print(err)
-	}
 }
 
 func main() {
