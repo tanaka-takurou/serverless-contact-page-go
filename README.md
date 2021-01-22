@@ -29,6 +29,11 @@ Simple kit for serverless contact page using AWS Lambda.
 - Add image file into static/img/
 - Edit templates/header.html like as 'favicon.ico'.
 
+### Target email address
+- open template.yml
+- edit 'your.email@sample.com'
+
+
 ### Deploy
 ```bash
 make clean build
