@@ -59,13 +59,7 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 func sendmessage(ctx context.Context, name string, message string, mail string) error {
 	if snsClient == nil {
-		cfg, err := config.LoadDefaultConfig()
-		if err != nil {
-			log.Print(err)
-			return err
-		}
-		cfg.Region = os.Getenv("REGION")
-		snsClient = sns.NewFromConfig(cfg)
+		snsClient = sns.NewFromConfig(getConfig(ctx))
 	}
 
 	input := &sns.PublishInput{
@@ -76,6 +70,15 @@ func sendmessage(ctx context.Context, name string, message string, mail string) 
 
 	_, err := snsClient.Publish(ctx, input)
 	return err
+}
+
+func getConfig(ctx context.Context) aws.Config {
+	var err error
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(os.Getenv("REGION")))
+	if err != nil {
+		log.Print(err)
+	}
+	return cfg
 }
 
 func main() {
